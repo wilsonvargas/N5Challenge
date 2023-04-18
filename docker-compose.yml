@@ -13,7 +13,7 @@ services:
   client:
     stdin_open: true
     environment:
-      - BACKEND_URL_BASE=api:8080
+      - REACT_APP_BACKEND_URL_BASE=http://localhost:8080
     build:
       context: ./Client
       dockerfile: Dockerfile      
