@@ -2,8 +2,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using N5Challenge.Domain;
 using N5Challenge.Domain.Entities;
+using N5Challenge.Infrastructure;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -28,6 +29,7 @@ namespace N5Challenge.Controllers
         {
             try
             {
+                permission.PermissionDate = DateTime.Today;
                 await unitOfWork.PermissionsRepository.Add(permission);
                 return Ok();
             }
