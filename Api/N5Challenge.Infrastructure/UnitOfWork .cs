@@ -10,7 +10,8 @@ namespace N5Challenge.Infrastructure.UnitOfWork
     public class UnitOfWork : IUnitOfWork, IDisposable
     {
         private readonly N5ChallengeDbContext _context;
-        private PermissionsRepository permissionsRepository;       
+        private PermissionsRepository permissionsRepository;   
+        private PermissionsTypeRepository permissionsTypeRepository;    
 
         public UnitOfWork(N5ChallengeDbContext context)
         {
@@ -27,7 +28,19 @@ namespace N5Challenge.Infrastructure.UnitOfWork
                 }
                 return permissionsRepository;
             }
-        }   
+        }
+
+        public IGenericRepository<PermissionType> PermissionsTypeRepository
+        {
+            get
+            {
+                if (permissionsTypeRepository == null)
+                {
+                    permissionsTypeRepository = new PermissionsTypeRepository(_context);
+                }
+                return permissionsTypeRepository;
+            }
+        }
 
         public void Dispose()
         {
