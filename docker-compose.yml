@@ -2,6 +2,7 @@ version: '3.4'
 
 services:
   api:
+    container_name: api
     image: ${DOCKER_REGISTRY-}api
     build:
       context: .
@@ -11,6 +12,7 @@ services:
     depends_on:
       - db
   client:
+    container_name: client
     stdin_open: true
     environment:
       - REACT_APP_BACKEND_URL_BASE=http://localhost:8080
@@ -23,6 +25,7 @@ services:
     ports:
       - 3000:3000
   db:
+    container_name: db
     image: "mcr.microsoft.com/mssql/server:2019-latest"
     ports:
       - "1433:1433"
