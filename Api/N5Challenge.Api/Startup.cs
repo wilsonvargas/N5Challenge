@@ -1,19 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using N5Challenge.Domain;
 using N5Challenge.Domain.Entities;
+using N5Challenge.Infrastructure;
 using N5Challenge.Infrastructure.Repositories;
 using N5Challenge.Infrastructure.Repositories.Generic;
 using N5Challenge.Infrastructure.UnitOfWork;
@@ -43,7 +37,6 @@ namespace N5Challenge
              {
                  c.SwaggerDoc("v1", new OpenApiInfo { Title = "N5Challenge.Api", Version = "v1", });
              });
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -62,6 +55,9 @@ namespace N5Challenge
             });
 
             app.UseHttpsRedirection();
+            app.UseCors(builder => builder.AllowAnyHeader()
+                                          .AllowAnyMethod()
+                                          .AllowAnyOrigin());
 
             app.UseRouting();
 
