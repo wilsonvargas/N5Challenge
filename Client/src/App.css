@@ -1,0 +1,32 @@
+.App {
+  text-align: center;
+}
+
+section {
+  background-color: whitesmoke;
+  height: 100vh;
+}
+
+.mainLayout
+{
+  background-color: #1a2f3c;
+}
+
+.btn-create {
+  background-color: #1f7889 !important;
+  border-color: #1f7889 !important;
+  color: white !important;
+  display: table !important;
+  margin: 20px 0px;
+}
+
+.btn-edit {
+  background-color: #1f7889 !important;
+  border-color: #1f7889 !important;
+  color: white !important;
+}
+
+.container-form
+{
+  padding-top: 1.5rem;
+}
