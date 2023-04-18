@@ -5,11 +5,23 @@ services:
     image: ${DOCKER_REGISTRY-}api
     build:
       context: .
-      dockerfile: Api/N5Challenge.Api/Dockerfile
+      dockerfile: /Api/N5Challenge.Api/Dockerfile
     ports:
       - "8080:80"
     depends_on:
       - db
+  client:
+    stdin_open: true
+    environment:
+      - BACKEND_URL_BASE=api:8080
+    build:
+      context: ./Client
+      dockerfile: Dockerfile      
+    volumes:
+      - /app/node_modules
+      - ./Client:/app
+    ports:
+      - 3000:3000
   db:
     image: "mcr.microsoft.com/mssql/server:2019-latest"
     ports:
