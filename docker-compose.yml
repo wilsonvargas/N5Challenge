@@ -10,7 +10,22 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+  db:
+    container_name: sqlserver
+    image: "mcr.microsoft.com/mssql/server:2019-latest"
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$$SA_PASSWORD" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    ports:
+      - "1433:1433"
+    environment:
+        SA_PASSWORD: "P@ssw0rd"
+        ACCEPT_EULA: "Y"
   client:
     container_name: client
     stdin_open: true
@@ -23,13 +38,27 @@ services:
       - /app/node_modules
       - ./Client:/app
     ports:
-      - 3000:3000
-  db:
-    container_name: db
-    image: "mcr.microsoft.com/mssql/server:2019-latest"
-    ports:
-      - "1433:1433"
-
+      - 3000:3000  
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.0
+    container_name: elasticsearch
     environment:
-        SA_PASSWORD: "P@ssw0rd"
-        ACCEPT_EULA: "Y"
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+volumes:
+  elasticsearch-data:
+    driver: local
