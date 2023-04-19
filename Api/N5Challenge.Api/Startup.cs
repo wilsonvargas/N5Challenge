@@ -13,6 +13,8 @@ using N5Challenge.Infrastructure;
 using N5Challenge.Infrastructure.Repositories;
 using N5Challenge.Infrastructure.Repositories.Generic;
 using N5Challenge.Infrastructure.UnitOfWork;
+using N5Challenge.Mediator.Commands;
+using N5Challenge.Mediator.Queries;
 
 namespace N5Challenge
 {
@@ -37,6 +39,14 @@ namespace N5Challenge
             services.AddTransient<IUnitOfWork, UnitOfWork>();
             services.AddTransient<IElasticSearchService, ElasticSearchService>();
             services.AddElasticsearch(Configuration);
+            services.AddMediatR(cfg =>
+            {
+                cfg.RegisterServicesFromAssemblies(typeof(CreatePermissionCommand).Assembly, 
+                                                   typeof(UpdatePermissionCommand).Assembly,
+                                                   typeof(GetPermissionListQuery).Assembly,
+                                                   typeof(GetPermissionTypeListQuery).Assembly,
+                                                   typeof(GetPermissionTypeByIdQuery).Assembly);
+            });
             services.AddSwaggerGen(c =>
              {
                  c.SwaggerDoc("v1", new OpenApiInfo { Title = "N5Challenge.Api", Version = "v1", });

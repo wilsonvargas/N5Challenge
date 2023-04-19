@@ -1,10 +1,11 @@
 
 
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using N5Challenge.Domain.Entities;
-using N5Challenge.Infrastructure;
+using N5Challenge.Mediator.Queries;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -15,12 +16,12 @@ namespace N5Challenge.Controllers
     public class PermissionsTypeController : ControllerBase
     {
         private readonly ILogger<PermissionsTypeController> logger;
-        private readonly IUnitOfWork unitOfWork;
+        private readonly IMediator mediator;
 
-        public PermissionsTypeController(ILogger<PermissionsTypeController> logger, IUnitOfWork unitOfWork)
+        public PermissionsTypeController(ILogger<PermissionsTypeController> logger, IMediator mediator)
         {
             this.logger = logger;
-            this.unitOfWork = unitOfWork;
+            this.mediator = mediator;
         }
 
         [HttpGet]
@@ -29,7 +30,7 @@ namespace N5Challenge.Controllers
         {
             try
             {
-                List<PermissionType> permissions = await unitOfWork.PermissionsTypeRepository.List();
+                List<PermissionType> permissions = await mediator.Send(new GetPermissionTypeListQuery());
                 return Ok(permissions);
             }
             catch (System.Exception)

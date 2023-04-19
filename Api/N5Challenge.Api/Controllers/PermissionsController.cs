@@ -7,11 +7,15 @@ using N5Challenge.Api.Contracts;
 using N5Challenge.Api.Services;
 using N5Challenge.Domain.Entities;
 using N5Challenge.Infrastructure;
+using MediatR;
 using Nest;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using N5Challenge.Mediator.Queries;
+using N5Challenge.Mediator.Commands;
+using N5Challenge.Api.Contracts.Request;
 
 namespace N5Challenge.Controllers
 {
@@ -20,35 +24,38 @@ namespace N5Challenge.Controllers
     public class PermissionsController : ControllerBase
     {
         private readonly ILogger<PermissionsController> logger;
-        private readonly IUnitOfWork unitOfWork;
+        private readonly IMediator mediator;
         private readonly IElasticSearchService elasticSearchService;
 
         public PermissionsController(ILogger<PermissionsController> logger,
-                                     IUnitOfWork unitOfWork,
+                                     IMediator mediator,
                                      IElasticSearchService elasticSearchService)
         {
             this.logger = logger;
-            this.unitOfWork = unitOfWork;
+            this.mediator = mediator;
             this.elasticSearchService = elasticSearchService;
         }
 
         [HttpPost]
         [Route("request-permission")]
-        public async Task<IActionResult> RequestPermission([FromBody] Permission permission)
+        public async Task<IActionResult> RequestPermission([FromBody] PermissionRequest permission)
         {
             try
             {
-                permission.PermissionDate = DateTime.Today;
-                await unitOfWork.PermissionsRepository.Add(permission);
-                PermissionType permissionType = await unitOfWork.PermissionsTypeRepository.Find(permission.PermissionTypeId);
+                Permission addedPermission = await mediator.Send(new CreatePermissionCommand(permission.EmployeeName,
+                                                                permission.EmployeeLastName,
+                                                                permission.PermissionTypeId));
+
+                PermissionType permissionType = await mediator.Send(new GetPermissionTypeByIdQuery() { Id = addedPermission.PermissionTypeId });
+
                 elasticSearchService.IndexDocument(
                     new PermissionInformation
                     {
-                        Id = permission.Id,
-                        EmployeeName = permission.EmployeeName,
-                        EmployeeLastName = permission.EmployeeLastName,
-                        PermissionDate = permission.PermissionDate,
-                        PermissionTypeId = permission.PermissionTypeId,
+                        Id = addedPermission.Id,
+                        EmployeeName = addedPermission.EmployeeName,
+                        EmployeeLastName = addedPermission.EmployeeLastName,
+                        PermissionDate = addedPermission.PermissionDate,
+                        PermissionTypeId = addedPermission.PermissionTypeId,
                         PermissionType = new PermissionTypeInformation { Id = permissionType.Id, Description = permissionType.Description }
                     });
 
@@ -79,27 +86,25 @@ namespace N5Challenge.Controllers
         [Route("modify-permission")]
         public async Task<IActionResult> ModifyPermission([FromBody] Permission permission)
         {
-            Permission permissionResult = await unitOfWork.PermissionsRepository.Find(permission.Id);
-
-            if (permissionResult == null)
-            {
-                return BadRequest("El permiso no existe.");
-            }
-
             try
-            {
-                PermissionType permissionType = await unitOfWork.PermissionsTypeRepository.Find(permission.PermissionTypeId);
+            {                
+                Permission updatedPermission = await mediator.Send(new UpdatePermissionCommand(permission.Id,
+                                                                permission.EmployeeName,
+                                                                permission.EmployeeLastName,
+                                                                permission.PermissionTypeId));
+
+                PermissionType permissionType = await mediator.Send(new GetPermissionTypeByIdQuery() { Id = updatedPermission.PermissionTypeId });
+
                 elasticSearchService.UpdateIndexDocument(
                     new PermissionInformation
                     {
-                        Id = permission.Id,
-                        EmployeeName = permission.EmployeeName,
-                        EmployeeLastName = permission.EmployeeLastName,
-                        PermissionDate = permission.PermissionDate,
-                        PermissionTypeId = permission.PermissionTypeId,
+                        Id = updatedPermission.Id,
+                        EmployeeName = updatedPermission.EmployeeName,
+                        EmployeeLastName = updatedPermission.EmployeeLastName,
+                        PermissionDate = updatedPermission.PermissionDate,
+                        PermissionTypeId = updatedPermission.PermissionTypeId,
                         PermissionType = new PermissionTypeInformation { Id = permissionType.Id, Description = permissionType.Description }
-                    });
-                await unitOfWork.PermissionsRepository.Update(permission);
+                    });                
                 return Ok();
             }
             catch (System.Exception)
