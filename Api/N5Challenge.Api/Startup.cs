@@ -44,6 +44,7 @@ namespace N5Challenge
                 cfg.RegisterServicesFromAssemblies(typeof(CreatePermissionCommand).Assembly, 
                                                    typeof(UpdatePermissionCommand).Assembly,
                                                    typeof(GetPermissionListQuery).Assembly,
+                                                   typeof(GetPermissionByIdQuery).Assembly,
                                                    typeof(GetPermissionTypeListQuery).Assembly,
                                                    typeof(GetPermissionTypeByIdQuery).Assembly);
             });
