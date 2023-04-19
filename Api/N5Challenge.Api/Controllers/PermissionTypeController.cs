@@ -15,12 +15,10 @@ namespace N5Challenge.Controllers
     [Route("api/permissions-type")]
     public class PermissionsTypeController : ControllerBase
     {
-        private readonly ILogger<PermissionsTypeController> logger;
         private readonly IMediator mediator;
 
-        public PermissionsTypeController(ILogger<PermissionsTypeController> logger, IMediator mediator)
+        public PermissionsTypeController(IMediator mediator)
         {
-            this.logger = logger;
             this.mediator = mediator;
         }
 

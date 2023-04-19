@@ -1,16 +1,10 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using N5Challenge.Api.Contracts;
 using N5Challenge.Api.Services;
 using N5Challenge.Domain.Entities;
-using N5Challenge.Infrastructure;
 using MediatR;
 using Nest;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using N5Challenge.Mediator.Queries;
@@ -23,28 +17,24 @@ namespace N5Challenge.Controllers
     [Route("api/permissions")]
     public class PermissionsController : ControllerBase
     {
-        private readonly ILogger<PermissionsController> logger;
         private readonly IMediator mediator;
         private readonly IElasticSearchService elasticSearchService;
 
-        public PermissionsController(ILogger<PermissionsController> logger,
-                                     IMediator mediator,
-                                     IElasticSearchService elasticSearchService)
+        public PermissionsController(IMediator mediator, IElasticSearchService elasticSearchService)
         {
-            this.logger = logger;
             this.mediator = mediator;
             this.elasticSearchService = elasticSearchService;
         }
 
         [HttpPost]
         [Route("request-permission")]
-        public async Task<IActionResult> RequestPermission([FromBody] PermissionRequest permission)
+        public async Task<IActionResult> RequestPermission([FromBody] CreatePermissionRequest permissionRequest)
         {
             try
             {
-                Permission addedPermission = await mediator.Send(new CreatePermissionCommand(permission.EmployeeName,
-                                                                permission.EmployeeLastName,
-                                                                permission.PermissionTypeId));
+                Permission addedPermission = await mediator.Send(new CreatePermissionCommand(permissionRequest.EmployeeName,
+                                                                permissionRequest.EmployeeLastName,
+                                                                permissionRequest.PermissionTypeId));
 
                 PermissionType permissionType = await mediator.Send(new GetPermissionTypeByIdQuery() { Id = addedPermission.PermissionTypeId });
 
@@ -84,14 +74,28 @@ namespace N5Challenge.Controllers
 
         [HttpPut]
         [Route("modify-permission")]
-        public async Task<IActionResult> ModifyPermission([FromBody] Permission permission)
+        public async Task<IActionResult> ModifyPermission([FromBody] UpdatePermissionRequest permissionRequest)
         {
             try
-            {                
-                Permission updatedPermission = await mediator.Send(new UpdatePermissionCommand(permission.Id,
-                                                                permission.EmployeeName,
-                                                                permission.EmployeeLastName,
-                                                                permission.PermissionTypeId));
+            {
+                Permission permissionQueryResult = await mediator.Send(new GetPermissionByIdQuery() { Id = permissionRequest.Id });
+
+                if (permissionQueryResult == null)
+                {
+                    return BadRequest("El permiso a modificar no existe.");
+                }
+
+                PermissionType permissionTypeQueryResult = await mediator.Send(new GetPermissionTypeByIdQuery() { Id = permissionRequest.PermissionTypeId });
+
+                if (permissionTypeQueryResult == null)
+                {
+                    return BadRequest("El tipo de permiso a modificar no existe.");
+                }
+
+                Permission updatedPermission = await mediator.Send(new UpdatePermissionCommand(permissionRequest.Id,
+                                                                permissionRequest.EmployeeName,
+                                                                permissionRequest.EmployeeLastName,
+                                                                permissionRequest.PermissionTypeId));
 
                 PermissionType permissionType = await mediator.Send(new GetPermissionTypeByIdQuery() { Id = updatedPermission.PermissionTypeId });
 
@@ -104,7 +108,7 @@ namespace N5Challenge.Controllers
                         PermissionDate = updatedPermission.PermissionDate,
                         PermissionTypeId = updatedPermission.PermissionTypeId,
                         PermissionType = new PermissionTypeInformation { Id = permissionType.Id, Description = permissionType.Description }
-                    });                
+                    });
                 return Ok();
             }
             catch (System.Exception)
