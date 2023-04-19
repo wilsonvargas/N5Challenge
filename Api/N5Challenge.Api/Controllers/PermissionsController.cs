@@ -1,11 +1,16 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using N5Challenge.Api.Contracts;
+using N5Challenge.Api.Services;
 using N5Challenge.Domain.Entities;
 using N5Challenge.Infrastructure;
+using Nest;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace N5Challenge.Controllers
@@ -16,11 +21,15 @@ namespace N5Challenge.Controllers
     {
         private readonly ILogger<PermissionsController> logger;
         private readonly IUnitOfWork unitOfWork;
+        private readonly IElasticSearchService elasticSearchService;
 
-        public PermissionsController(ILogger<PermissionsController> logger, IUnitOfWork unitOfWork)
+        public PermissionsController(ILogger<PermissionsController> logger,
+                                     IUnitOfWork unitOfWork,
+                                     IElasticSearchService elasticSearchService)
         {
             this.logger = logger;
             this.unitOfWork = unitOfWork;
+            this.elasticSearchService = elasticSearchService;
         }
 
         [HttpPost]
@@ -31,6 +40,18 @@ namespace N5Challenge.Controllers
             {
                 permission.PermissionDate = DateTime.Today;
                 await unitOfWork.PermissionsRepository.Add(permission);
+                PermissionType permissionType = await unitOfWork.PermissionsTypeRepository.Find(permission.PermissionTypeId);
+                elasticSearchService.IndexDocument(
+                    new PermissionInformation
+                    {
+                        Id = permission.Id,
+                        EmployeeName = permission.EmployeeName,
+                        EmployeeLastName = permission.EmployeeLastName,
+                        PermissionDate = permission.PermissionDate,
+                        PermissionTypeId = permission.PermissionTypeId,
+                        PermissionType = new PermissionTypeInformation { Id = permissionType.Id, Description = permissionType.Description }
+                    });
+
                 return Ok();
             }
             catch (System.Exception)
@@ -45,8 +66,8 @@ namespace N5Challenge.Controllers
         {
             try
             {
-                List<Permission> permissions = await unitOfWork.PermissionsRepository.List(include: x => x.Include(p => p.PermissionType));
-                return Ok(permissions);
+                ISearchResponse<PermissionInformation> result = await elasticSearchService.GetAll();
+                return Ok(result.Documents.ToList());
             }
             catch (System.Exception)
             {
@@ -67,6 +88,17 @@ namespace N5Challenge.Controllers
 
             try
             {
+                PermissionType permissionType = await unitOfWork.PermissionsTypeRepository.Find(permission.PermissionTypeId);
+                elasticSearchService.UpdateIndexDocument(
+                    new PermissionInformation
+                    {
+                        Id = permission.Id,
+                        EmployeeName = permission.EmployeeName,
+                        EmployeeLastName = permission.EmployeeLastName,
+                        PermissionDate = permission.PermissionDate,
+                        PermissionTypeId = permission.PermissionTypeId,
+                        PermissionType = new PermissionTypeInformation { Id = permissionType.Id, Description = permissionType.Description }
+                    });
                 await unitOfWork.PermissionsRepository.Update(permission);
                 return Ok();
             }

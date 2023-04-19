@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using N5Challenge.Api.Extensions;
+using N5Challenge.Api.Services;
 using N5Challenge.Domain;
 using N5Challenge.Domain.Entities;
 using N5Challenge.Infrastructure;
@@ -33,6 +35,8 @@ namespace N5Challenge
             services.AddDbContext<N5ChallengeDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("N5Challenge")));
             services.AddTransient<IGenericRepository<Permission>, PermissionsRepository>();
             services.AddTransient<IUnitOfWork, UnitOfWork>();
+            services.AddTransient<IElasticSearchService, ElasticSearchService>();
+            services.AddElasticsearch(Configuration);
             services.AddSwaggerGen(c =>
              {
                  c.SwaggerDoc("v1", new OpenApiInfo { Title = "N5Challenge.Api", Version = "v1", });
